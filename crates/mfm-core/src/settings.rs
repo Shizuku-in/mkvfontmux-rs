@@ -11,6 +11,8 @@ use std::{
 pub struct Settings {
     /// Font directories to index; empty means the platform font directories.
     pub font_dirs: Vec<PathBuf>,
+    /// Muxing backend.
+    pub muxer: MuxerKind,
     /// Explicit `mkvmerge` path; otherwise it is searched for.
     pub mkvmerge: Option<PathBuf>,
     /// Retry missing names without `_gbk`-style encoding suffixes.
@@ -31,6 +33,16 @@ pub struct Settings {
     pub languages: LanguageRules,
 }
 
+/// Muxing backend.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum MuxerKind {
+    /// External `mkvmerge` from MKVToolNix.
+    Mkvmerge,
+    /// Built-in remuxer; needs no external tools.
+    Native,
+}
+
 /// Where muxed files are written.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case", tag = "mode")]
@@ -45,6 +57,7 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             font_dirs: Vec::new(),
+            muxer: MuxerKind::Mkvmerge,
             mkvmerge: None,
             smart_match: true,
             nearest_weight: true,
@@ -161,8 +174,11 @@ mod tests {
         let partial: Settings = toml::from_str("subset = false").unwrap();
         assert!(!partial.subset && partial.rename);
         // A languages table with only a fallback keeps the default rules.
-        let partial: Settings = toml::from_str("[languages]
-fallback = \"ja\"").unwrap();
+        let partial: Settings = toml::from_str(
+            "[languages]
+fallback = \"ja\"",
+        )
+        .unwrap();
         assert_eq!(partial.languages.fallback, "ja");
         assert_eq!(partial.languages.rules, LanguageRules::default().rules);
     }

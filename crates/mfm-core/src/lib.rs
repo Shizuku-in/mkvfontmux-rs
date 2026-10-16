@@ -21,8 +21,8 @@ pub use events::{Event, Reporter, Silent, Stage};
 pub use execute::{EpisodeOutcome, ExecuteError, execute};
 pub use language::{LanguageRule, LanguageRules};
 pub use mfm_font::IndexStats;
-pub use mfm_mkv::{MkvmergeMuxer, Muxer};
-pub use settings::{OutputMode, Settings, cache_path, config_dir};
+pub use mfm_mkv::{MkvmergeMuxer, Muxer, NativeMuxer};
+pub use settings::{MuxerKind, OutputMode, Settings, cache_path, config_dir};
 
 use std::path::Path;
 

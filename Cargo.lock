@@ -481,7 +481,9 @@ dependencies = [
 name = "mfm-mkv"
 version = "0.1.0"
 dependencies = [
+ "rand",
  "serde_json",
+ "tempfile",
  "thiserror",
  "tracing",
 ]

@@ -1,11 +1,13 @@
 //! Adding subtitle tracks and font attachments to Matroska files.
 //!
 //! [`Muxer`] abstracts the backend. [`MkvmergeMuxer`] drives an external
-//! `mkvmerge`; a native backend is planned alongside it.
+//! `mkvmerge`; [`NativeMuxer`] remuxes without external tools.
 
 mod mkvmerge;
+mod native;
 
 pub use mkvmerge::MkvmergeMuxer;
+pub use native::NativeMuxer;
 
 use std::path::PathBuf;
 

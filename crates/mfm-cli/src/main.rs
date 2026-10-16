@@ -1,8 +1,8 @@
 use anyhow::{Context, bail};
 use clap::Parser;
 use mfm_core::{
-    EpisodePlan, Event, MkvmergeMuxer, OutputMode, Reporter, Settings, Stage, analyze,
-    build_font_index, discover, execute,
+    EpisodePlan, Event, MkvmergeMuxer, Muxer, MuxerKind, NativeMuxer, OutputMode, Reporter,
+    Settings, Stage, analyze, build_font_index, discover, execute,
 };
 use std::{
     io::Write,
@@ -24,6 +24,9 @@ struct Cli {
     #[arg(required = true)]
     inputs: Vec<PathBuf>,
 
+    /// Muxing backend: `mkvmerge` or the built-in `native` remuxer.
+    #[arg(long, value_name = "BACKEND", value_parser = ["mkvmerge", "native"])]
+    muxer: Option<String>,
     /// mkvmerge executable.
     #[arg(short = 'm', long = "mkvmerge-bin", value_name = "PATH")]
     mkvmerge: Option<PathBuf>,
@@ -109,6 +112,11 @@ fn load_settings(cli: &Cli) -> anyhow::Result<Settings> {
         && let Ok(text) = std::fs::read_to_string(&ini)
     {
         settings.apply_legacy_ini(&text);
+    }
+    match cli.muxer.as_deref() {
+        Some("native") => settings.muxer = MuxerKind::Native,
+        Some("mkvmerge") => settings.muxer = MuxerKind::Mkvmerge,
+        _ => {}
     }
     if let Some(m) = &cli.mkvmerge {
         settings.mkvmerge = Some(m.clone());
@@ -281,12 +289,14 @@ fn run(cli: Cli) -> anyhow::Result<bool> {
     if episodes.is_empty() {
         bail!("no .mkv files found");
     }
-    let muxer = if cli.report_only {
-        None
-    } else {
-        Some(MkvmergeMuxer::locate(settings.mkvmerge.as_deref()).context(
-            "mkvmerge not found; pass --mkvmerge-bin, set MKVMERGE_BIN, or add MKVToolNix to PATH",
-        )?)
+    let muxer: Option<Box<dyn Muxer>> = match (cli.report_only, settings.muxer) {
+        (true, _) => None,
+        (false, MuxerKind::Native) => Some(Box::new(NativeMuxer)),
+        (false, MuxerKind::Mkvmerge) => Some(Box::new(
+            MkvmergeMuxer::locate(settings.mkvmerge.as_deref()).context(
+                "mkvmerge not found; pass --mkvmerge-bin, set MKVMERGE_BIN, add MKVToolNix to PATH, or use --muxer native",
+            )?,
+        )),
     };
 
     let cancelled = Arc::new(AtomicBool::new(false));
@@ -331,9 +341,12 @@ fn run(cli: Cli) -> anyhow::Result<bool> {
             json_results.push(serde_json::json!({ "plan": plan }));
             continue;
         };
-        match execute(i, &plan, &settings, muxer, &console) {
+        match execute(i, &plan, &settings, muxer.as_ref(), &console) {
             Ok(outcome) => {
                 eprintln!("  done: {}", outcome.output.display());
+                for warning in &outcome.warnings {
+                    eprintln!("  ! {warning}");
+                }
                 if let Some(temp) = &outcome.temp_dir {
                     eprintln!("  temporary files kept in {}", temp.display());
                 }

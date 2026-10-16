@@ -7,13 +7,14 @@
 - 使用 [ass-fonts](https://crates.io/crates/ass-fonts) 匹配字体，支持字重、斜体和竖排 `@` 字体。
 - 使用内置的 [HarfBuzz](https://github.com/harfbuzz/harfbuzz) 子集化字体，不再依赖 Python/`pyftsubset`。
 - 子集字体使用随机名称，避免与观看者系统中已安装的字体冲突。
+- 可使用 `mkvmerge` 封装，也可使用无需外部工具的内置封装器（`--muxer native`）。
 - 支持 GBK、Big5、Shift_JIS 等编码的字幕，并缓存字体索引。
 
-> Flutter 桌面 GUI 和原生封装器正在开发中，目前封装使用 `mkvmerge`。
+> Flutter 桌面 GUI 正在开发中。
 
 ## 环境要求
 
-- `mkvmerge`（来自 [MKVToolNix](https://mkvtoolnix.org/)）
+- `mkvmerge`（来自 [MKVToolNix](https://mkvtoolnix.org/)），使用 `--muxer native` 时不需要
 - 从源码构建：Rust（stable）和 C++17 编译器
 
 ## 构建

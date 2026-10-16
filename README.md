@@ -7,13 +7,14 @@ A Rust rewrite of [MkvFontMux](https://github.com/Shizuku-in/mkvfontmux). It fin
 - Matches fonts with [ass-fonts](https://crates.io/crates/ass-fonts), aware of weight, italic and vertical `@` fonts.
 - Subsets fonts with a bundled [HarfBuzz](https://github.com/harfbuzz/harfbuzz), so Python/`pyftsubset` is no longer needed.
 - Gives subset fonts random names to avoid clashes with fonts installed on the viewer's system.
+- Muxes with `mkvmerge`, or with the built-in muxer (`--muxer native`), which needs no external tools.
 - Detects GBK, Big5 and Shift_JIS subtitles and caches the font index.
 
-> A Flutter desktop GUI and a native muxer are in development. For now muxing uses `mkvmerge`.
+> A Flutter desktop GUI is in development.
 
 ## Requirements
 
-- `mkvmerge` from [MKVToolNix](https://mkvtoolnix.org/)
+- `mkvmerge` from [MKVToolNix](https://mkvtoolnix.org/), unless you use `--muxer native`
 - To build from source: Rust (stable) and a C++17 compiler
 
 ## Build

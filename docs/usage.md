@@ -8,6 +8,13 @@ Inputs can be directories (only the top level is searched) or individual `.mkv` 
 
 Exit codes: `0` means success; `1` means some files failed (or, with `-p`, some fonts are missing); `2` means a usage or runtime error.
 
+## Muxers
+
+`--muxer` (or `muxer` in the settings file) selects the backend:
+
+- `mkvmerge` (default): runs MKVToolNix's `mkvmerge`.
+- `native`: the built-in muxer. It copies existing tracks byte for byte, interleaves the new subtitle tracks into the existing clusters, adds the attachments, and rebuilds SeekHead and Cues. Comment lines stay in the subtitle header, as with mkvmerge. A truncated input is muxed up to its last complete block, with a warning.
+
 ## Settings
 
 Lookup order:
@@ -18,6 +25,7 @@ Lookup order:
 The settings file is `config.toml` in `%APPDATA%\mkvfontmux` (Windows), `~/Library/Application Support/mkvfontmux` (macOS) or `~/.config/mkvfontmux` (Linux). Every key is optional:
 
 ```toml
+muxer = "mkvmerge"        # Or "native"
 font-dirs = ['H:\Fonts', 'H:\MoreFonts']
 mkvmerge = 'D:\Program Files\MKVToolNix\mkvmerge.exe'
 smart-match = true        # Strip _gbk/_big5/... suffixes when a name is not found

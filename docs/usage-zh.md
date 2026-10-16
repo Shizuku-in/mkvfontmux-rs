@@ -8,6 +8,13 @@
 
 退出码：`0` 表示成功；`1` 表示部分文件失败（使用 `-p` 时表示有字体缺失）；`2` 表示参数或运行错误。
 
+## 封装方式
+
+用 `--muxer`（或设置文件中的 `muxer`）选择封装后端：
+
+- `mkvmerge`（默认）：调用 MKVToolNix 的 `mkvmerge`。
+- `native`：内置封装器。已有轨道按字节原样复制，新字幕轨按时间插入现有的 Cluster，同时写入附件并重建 SeekHead 和 Cues。注释行与 mkvmerge 一样保留在字幕头部。输入文件不完整时，会封装到最后一个完整的数据块为止，并给出警告。
+
 ## 设置
 
 查找顺序：
@@ -18,6 +25,7 @@
 设置文件为 `config.toml`，位于 `%APPDATA%\mkvfontmux`（Windows）、`~/Library/Application Support/mkvfontmux`（macOS）或 `~/.config/mkvfontmux`（Linux）。所有键都可以省略：
 
 ```toml
+muxer = "mkvmerge"        # 或 "native"
 font-dirs = ['H:\Fonts', 'H:\MoreFonts']
 mkvmerge = 'D:\Program Files\MKVToolNix\mkvmerge.exe'
 smart-match = true        # 找不到字体名时，去掉 _gbk/_big5 等后缀再试
