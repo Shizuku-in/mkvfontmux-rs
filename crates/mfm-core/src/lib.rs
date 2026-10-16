@@ -13,14 +13,15 @@ mod language;
 mod settings;
 
 pub use analyze::{
-    EpisodePlan, FontUse, GlyphGap, MissingFont, MissingKind, PreparedSubtitle, analyze,
+    EpisodePlan, FaceRef, FontOverrides, FontUse, GlyphGap, MissingFont, MissingKind,
+    PreparedSubtitle, analyze,
 };
-pub use ass_fonts::{FontFace, FontIndex};
+pub use ass_fonts::{FontFace, FontIndex, normalize_name};
 pub use discover::{Episode, SubtitleInput, discover};
 pub use events::{Event, Reporter, Silent, Stage};
 pub use execute::{EpisodeOutcome, ExecuteError, execute};
 pub use language::{LanguageRule, LanguageRules};
-pub use mfm_font::IndexStats;
+pub use mfm_font::{IndexStats, system_font_dirs};
 pub use mfm_mkv::{MkvmergeMuxer, Muxer, NativeMuxer};
 pub use settings::{MuxerKind, OutputMode, Settings, cache_path, config_dir};
 

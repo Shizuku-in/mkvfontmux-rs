@@ -10,8 +10,6 @@
 - 可使用 `mkvmerge` 封装，也可使用无需外部工具的内置封装器（`--muxer native`）。
 - 支持 GBK、Big5、Shift_JIS 等编码的字幕，并缓存字体索引。
 
-> Flutter 桌面 GUI 正在开发中。
-
 ## 环境要求
 
 - `mkvmerge`（来自 [MKVToolNix](https://mkvtoolnix.org/)），使用 `--muxer native` 时不需要
@@ -34,6 +32,10 @@ mkvfontmux "[DMG&VCB-Studio] Shingeki no Kyojin Season 2 [Ma10p_1080p]" -d Fonts
 目录中的每个 `.mkv` 都会与文件名以其名称开头的 `.ass`/`.ssa` 字幕一起封装，结果输出到 `output` 子目录。全部参数见 `mkvfontmux --help`，与原版兼容。
 
 设置、语言识别和字体匹配规则见 [docs/usage-zh.md](docs/usage-zh.md)。
+
+## 图形界面
+
+桌面应用（Windows、macOS、Linux）会为每个视频显示预检结果（已找到的字体、缺失的字体、缺字），可以为缺失的字体手动指定文件，并与命令行共用同一份设置。把文件夹或 `.mkv` 文件拖进窗口即可添加。构建方法见 [app/README.md](app/README.md)。
 
 ## 许可证
 

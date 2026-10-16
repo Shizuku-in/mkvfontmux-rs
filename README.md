@@ -10,8 +10,6 @@ A Rust rewrite of [MkvFontMux](https://github.com/Shizuku-in/mkvfontmux). It fin
 - Muxes with `mkvmerge`, or with the built-in muxer (`--muxer native`), which needs no external tools.
 - Detects GBK, Big5 and Shift_JIS subtitles and caches the font index.
 
-> A Flutter desktop GUI is in development.
-
 ## Requirements
 
 - `mkvmerge` from [MKVToolNix](https://mkvtoolnix.org/), unless you use `--muxer native`
@@ -34,6 +32,10 @@ mkvfontmux "[DMG&VCB-Studio] Shingeki no Kyojin Season 2 [Ma10p_1080p]" -d Fonts
 Each `.mkv` in the directory is muxed with the `.ass`/`.ssa` files whose names start with its name. Results go to the `output` subdirectory. Run `mkvfontmux --help` for all options; they are compatible with the original tool.
 
 See [docs/usage.md](docs/usage.md) for settings, language detection and font matching rules.
+
+## GUI
+
+The desktop app (Windows, macOS, Linux) shows a preflight report for each video (fonts found, missing fonts, missing glyphs), lets you pick a font for a missing name, and shares its settings with the CLI. Drop folders or `.mkv` files onto the window to add them. See [app/README.md](app/README.md) to build it.
 
 ## License
 

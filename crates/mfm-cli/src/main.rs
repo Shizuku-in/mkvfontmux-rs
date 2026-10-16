@@ -334,7 +334,7 @@ fn run(cli: Cli) -> anyhow::Result<bool> {
             eprintln!("  skipped: no matching subtitles");
             continue;
         }
-        let plan = analyze(episode, &index, &settings);
+        let plan = analyze(episode, &index, &settings, &Default::default());
         print_plan(&plan);
         let Some(muxer) = &muxer else {
             ok &= plan.missing.is_empty();

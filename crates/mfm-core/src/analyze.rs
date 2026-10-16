@@ -1,9 +1,9 @@
 use crate::{discover::Episode, settings::Settings};
 use ass_fonts::{
-    FontFace, FontIndex, FontReference, MissingReason, ResolveOptions, ResolveReport,
+    FontFace, FontIndex, FontReference, MissingReason, Resolution, ResolveOptions, ResolveReport,
     SynthesisPolicy, WeightMatching, normalize_name,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet},
     path::PathBuf,
@@ -11,6 +11,18 @@ use std::{
 
 /// Encoding suffixes stripped by smart matching, as in the original tool.
 const SMART_SUFFIXES: [&str; 5] = ["_gbk", "_gb2312", "_big5", "_jis", "_kr"];
+
+/// A specific face in a font file.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct FaceRef {
+    pub path: PathBuf,
+    pub face_index: u32,
+}
+
+/// Faces chosen by the user, keyed by font name (normalized with
+/// [`ass_fonts::normalize_name`]). They replace automatic resolution for every
+/// weight and slant of that name, and may point at files outside the index.
+pub type FontOverrides = BTreeMap<String, FaceRef>;
 
 /// Everything needed to mux one episode, computed without writing files.
 #[derive(Debug, Clone, Serialize)]
@@ -79,8 +91,13 @@ impl EpisodePlan {
     }
 }
 
-/// Resolve the fonts of an episode's subtitles against `index`.
-pub fn analyze(episode: &Episode, index: &FontIndex, settings: &Settings) -> EpisodePlan {
+/// Resolve the fonts of an episode's subtitles against `index`, applying `overrides`.
+pub fn analyze(
+    episode: &Episode,
+    index: &FontIndex,
+    settings: &Settings,
+    overrides: &FontOverrides,
+) -> EpisodePlan {
     let mut plan = EpisodePlan {
         mkv: episode.mkv.clone(),
         subtitles: Vec::new(),
@@ -105,6 +122,20 @@ pub fn analyze(episode: &Episode, index: &FontIndex, settings: &Settings) -> Epi
         .iter()
         .map(|n| normalize_name(n))
         .collect();
+
+    let mut chosen: BTreeMap<&str, FontFace> = BTreeMap::new();
+    for (name, face) in overrides {
+        match load_face(index, face) {
+            Ok(found) => {
+                chosen.insert(name.as_str(), found);
+            }
+            Err(e) => plan.warnings.push(format!(
+                "override for \"{name}\" ignored: {}#{}: {e}",
+                face.path.display(),
+                face.face_index
+            )),
+        }
+    }
 
     // (key, path, face index) -> use
     let mut uses: BTreeMap<(String, PathBuf, u32), FontUse> = BTreeMap::new();
@@ -138,15 +169,25 @@ pub fn analyze(episode: &Episode, index: &FontIndex, settings: &Settings) -> Epi
             plan.warnings
                 .push(format!("{file_name}:{}: {}", d.line, d.message));
         }
-        let references: Vec<FontReference> = extracted
+        let (manual, references): (Vec<FontReference>, Vec<FontReference>) = extracted
             .references
             .into_iter()
             .filter(|r| !ignored.contains(&normalize_name(&r.name)))
-            .collect();
+            .partition(|r| chosen.contains_key(normalize_name(&r.name).as_str()));
         let mut report = index.resolve_with_options(&references, options);
 
         if settings.smart_match {
             retry_without_suffix(index, options, &mut report);
+        }
+        for reference in manual {
+            let face = chosen[normalize_name(&reference.name).as_str()].clone();
+            report.resolved.push(Resolution {
+                reference,
+                candidates: vec![face],
+                missing_reason: None,
+                available_variants: Vec::new(),
+                matches: Vec::new(),
+            });
         }
 
         for resolution in report.resolved.iter().chain(&report.ambiguous) {
@@ -270,6 +311,26 @@ pub fn analyze(episode: &Episode, index: &FontIndex, settings: &Settings) -> Epi
     plan
 }
 
+/// Find an override's face in the index, or scan its file when it is outside the index.
+fn load_face(index: &FontIndex, face: &FaceRef) -> Result<FontFace, String> {
+    if let Some(found) = index
+        .faces()
+        .iter()
+        .find(|f| f.path == face.path && f.face_index == face.face_index)
+    {
+        return Ok(found.clone());
+    }
+    let (faces, issues) = ass_fonts::scan_font_file(&face.path);
+    faces
+        .into_iter()
+        .find(|f| f.face_index == face.face_index)
+        .ok_or_else(|| {
+            issues
+                .first()
+                .map_or_else(|| "no such face".to_owned(), |i| i.message.clone())
+        })
+}
+
 /// Whether two faces carry the same names and style, as with duplicate installs.
 fn same_font(a: &FontFace, b: &FontFace) -> bool {
     a.weight == b.weight && a.italic == b.italic && a.name_records == b.name_records
@@ -313,4 +374,48 @@ fn retry_without_suffix(index: &FontIndex, options: ResolveOptions, report: &mut
         }
     }
     report.missing = still_missing;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::discover::SubtitleInput;
+
+    #[test]
+    fn unusable_override_is_reported_and_name_stays_missing() {
+        let dir = tempfile::tempdir().unwrap();
+        let ass = dir.path().join("a.ass");
+        std::fs::write(
+            &ass,
+            "[V4+ Styles]\nFormat: Name, Fontname\nStyle: Default,Nowhere Sans\n[Events]\nFormat: Style, Text\nDialogue: Default,Hi\n",
+        )
+        .unwrap();
+        let episode = Episode {
+            mkv: dir.path().join("a.mkv"),
+            subtitles: vec![SubtitleInput {
+                path: ass,
+                language: "en".into(),
+            }],
+        };
+        let overrides = FontOverrides::from([(
+            normalize_name("Nowhere Sans"),
+            FaceRef {
+                path: dir.path().join("missing.ttf"),
+                face_index: 0,
+            },
+        )]);
+        let plan = analyze(
+            &episode,
+            &FontIndex::new([]),
+            &Settings::default(),
+            &overrides,
+        );
+        assert!(
+            plan.warnings
+                .iter()
+                .any(|w| w.contains("override for \"nowhere sans\" ignored"))
+        );
+        assert_eq!(plan.missing.len(), 1);
+        assert!(plan.fonts.is_empty());
+    }
 }
