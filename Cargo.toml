@@ -1,0 +1,33 @@
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/Shizuku-in/mkvfontmux-rs"
+
+[workspace.dependencies]
+mfm-harfbuzz = { path = "crates/mfm-harfbuzz" }
+mfm-font = { path = "crates/mfm-font" }
+mfm-mkv = { path = "crates/mfm-mkv" }
+mfm-core = { path = "crates/mfm-core" }
+
+ass-fonts = { version = "0.3", features = ["encoding", "parallel"] }
+anyhow = "1"
+cc = "1"
+clap = { version = "4.5", features = ["derive"] }
+encoding_rs = "0.8"
+postcard = { version = "1", default-features = false, features = ["use-std"] }
+rand = "0.9"
+rayon = "1"
+read-fonts = "0.45"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tempfile = "3"
+thiserror = "2"
+toml = "0.9"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+write-fonts = { version = "0.54", features = ["read"] }

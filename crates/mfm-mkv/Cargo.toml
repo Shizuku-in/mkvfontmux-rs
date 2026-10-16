@@ -1,0 +1,11 @@
+[package]
+name = "mfm-mkv"
+description = "Matroska remuxing for mkvfontmux: subtitle tracks and font attachments."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true

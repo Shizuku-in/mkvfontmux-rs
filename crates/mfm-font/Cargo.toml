@@ -1,0 +1,20 @@
+[package]
+name = "mfm-font"
+description = "Font index cache, subsetting, and name rewriting for mkvfontmux."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+ass-fonts.workspace = true
+mfm-harfbuzz.workspace = true
+postcard.workspace = true
+rayon.workspace = true
+read-fonts.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+write-fonts.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
